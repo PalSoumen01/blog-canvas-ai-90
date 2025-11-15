@@ -16,8 +16,10 @@ import {
   Quote,
   Undo,
   Redo,
+  ImagePlus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useRef } from "react";
 
 interface RichTextEditorProps {
   content: string;
@@ -40,9 +42,23 @@ const RichTextEditor = ({ content, onChange }: RichTextEditorProps) => {
     },
   });
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   if (!editor) {
     return null;
   }
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const url = event.target?.result as string;
+      editor.chain().focus().setImage({ src: url }).run();
+    };
+    reader.readAsDataURL(file);
+  };
 
   const ToolbarButton = ({
     onClick,
@@ -129,6 +145,17 @@ const RichTextEditor = ({ content, onChange }: RichTextEditorProps) => {
         >
           <Quote className="w-4 h-4" />
         </ToolbarButton>
+        <div className="w-px h-8 bg-border mx-1" />
+        <ToolbarButton onClick={() => fileInputRef.current?.click()}>
+          <ImagePlus className="w-4 h-4" />
+        </ToolbarButton>
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleImageUpload}
+          accept="image/*"
+          className="hidden"
+        />
         <div className="w-px h-8 bg-border mx-1" />
         <ToolbarButton onClick={() => editor.chain().focus().undo().run()}>
           <Undo className="w-4 h-4" />
