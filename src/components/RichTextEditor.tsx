@@ -17,9 +17,11 @@ import {
   Undo,
   Redo,
   ImagePlus,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useRef } from "react";
+import { useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface RichTextEditorProps {
   content: string;
@@ -27,6 +29,9 @@ interface RichTextEditorProps {
 }
 
 const RichTextEditor = ({ content, onChange }: RichTextEditorProps) => {
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -34,15 +39,19 @@ const RichTextEditor = ({ content, onChange }: RichTextEditorProps) => {
       Link.configure({
         openOnClick: false,
       }),
-      Image,
+      Image.configure({
+        inline: false,
+        allowBase64: true,
+        HTMLAttributes: {
+          class: 'max-w-full h-auto rounded-lg my-4',
+        },
+      }),
     ],
     content: content ? JSON.parse(content) : "",
     onUpdate: ({ editor }) => {
       onChange(JSON.stringify(editor.getJSON()));
     },
   });
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!editor) {
     return null;
@@ -55,9 +64,26 @@ const RichTextEditor = ({ content, onChange }: RichTextEditorProps) => {
     const reader = new FileReader();
     reader.onload = (event) => {
       const url = event.target?.result as string;
-      editor.chain().focus().setImage({ src: url }).run();
+      setImagePreview(url);
     };
     reader.readAsDataURL(file);
+  };
+
+  const confirmImageUpload = () => {
+    if (imagePreview && editor) {
+      editor.chain().focus().setImage({ src: imagePreview }).run();
+      setImagePreview(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const cancelImageUpload = () => {
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const ToolbarButton = ({
@@ -81,8 +107,55 @@ const RichTextEditor = ({ content, onChange }: RichTextEditorProps) => {
   );
 
   return (
-    <div className="border border-border rounded-lg overflow-hidden bg-card">
-      <div className="flex flex-wrap gap-1 p-2 border-b border-border bg-muted/50">
+    <div className="space-y-4">
+      {/* Image Preview Modal */}
+      <AnimatePresence>
+        {imagePreview && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={cancelImageUpload}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-card border border-border rounded-lg p-6 max-w-2xl w-full space-y-4"
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Image Preview</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={cancelImageUpload}
+                  className="h-8 w-8 p-0"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+              <img
+                src={imagePreview}
+                alt="Preview"
+                className="w-full h-auto max-h-96 object-contain rounded-lg"
+              />
+              <div className="flex gap-3 justify-end">
+                <Button variant="outline" onClick={cancelImageUpload}>
+                  Cancel
+                </Button>
+                <Button onClick={confirmImageUpload}>
+                  Insert Image
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="border border-border rounded-lg overflow-hidden bg-card">
+        <div className="flex flex-wrap gap-1 p-2 border-b border-border bg-muted/50">
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBold().run()}
           active={editor.isActive("bold")}
@@ -166,8 +239,9 @@ const RichTextEditor = ({ content, onChange }: RichTextEditorProps) => {
       </div>
       <EditorContent
         editor={editor}
-        className="prose prose-sm max-w-none p-4 min-h-[300px] focus:outline-none"
+        className="prose prose-sm max-w-none p-4 min-h-[300px] max-h-[600px] overflow-y-auto focus:outline-none [&_.ProseMirror]:min-h-[300px] [&_.ProseMirror]:outline-none [&_.ProseMirror_img]:max-w-[600px] [&_.ProseMirror_img]:w-auto [&_.ProseMirror_img]:cursor-pointer"
       />
+      </div>
     </div>
   );
 };
