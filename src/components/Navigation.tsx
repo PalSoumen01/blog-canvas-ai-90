@@ -1,12 +1,13 @@
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { BookOpen, Home, FolderOpen, Info, Sparkles } from "lucide-react";
+import { BookOpen, Home, FolderOpen, Info, Sparkles, PenSquare } from "lucide-react";
 
 const Navigation = () => {
   const location = useLocation();
 
   const navItems = [
     { path: "/", label: "Home", icon: Home },
+    { path: "/create", label: "Write", icon: PenSquare },
     { path: "/categories", label: "Categories", icon: FolderOpen },
     { path: "/ai", label: "AI Assistant", icon: Sparkles },
     { path: "/about", label: "About", icon: Info },
