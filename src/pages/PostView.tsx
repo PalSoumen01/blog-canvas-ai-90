@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import CommentSection from "@/components/CommentSection";
+import FollowButton from "@/components/FollowButton";
 import { mockPosts, mockComments } from "@/data/mockData";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -21,7 +22,18 @@ const PostView = () => {
   const [showAiSummary, setShowAiSummary] = useState(false);
 
   const editor = useEditor({
-    extensions: [StarterKit, Underline, Link, Image],
+    extensions: [
+      StarterKit,
+      Underline,
+      Link,
+      Image.configure({
+        inline: false,
+        allowBase64: true,
+        HTMLAttributes: {
+          class: 'max-w-full h-auto rounded-lg my-4',
+        },
+      }),
+    ],
     content: post?.content ? JSON.parse(post.content) : "",
     editable: false,
   });
@@ -64,19 +76,22 @@ const PostView = () => {
             <h1 className="text-4xl md:text-5xl font-bold leading-tight">
               {post.title}
             </h1>
-            <div className="flex flex-wrap items-center gap-6 text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <User className="w-5 h-5" />
-                <span className="font-medium">{post.author}</span>
+            <div className="flex flex-wrap items-center justify-between gap-6">
+              <div className="flex flex-wrap items-center gap-6 text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <User className="w-5 h-5" />
+                  <span className="font-medium">{post.author}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-5 h-5" />
+                  <span>{new Date(post.date).toLocaleDateString()}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="w-5 h-5" />
+                  <span>{post.readTime}</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="w-5 h-5" />
-                <span>{new Date(post.date).toLocaleDateString()}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Clock className="w-5 h-5" />
-                <span>{post.readTime}</span>
-              </div>
+              <FollowButton authorName={post.author} />
             </div>
           </div>
 
@@ -111,23 +126,30 @@ const PostView = () => {
           </Card>
 
           {/* Content */}
-          <Card>
-            <CardContent className="p-8">
-              <EditorContent
-                editor={editor}
-                className="prose prose-lg max-w-none
-                  prose-headings:font-bold prose-headings:text-foreground
-                  prose-p:text-foreground prose-p:leading-relaxed
-                  prose-a:text-primary prose-a:no-underline hover:prose-a:underline
-                  prose-strong:text-foreground prose-strong:font-bold
-                  prose-code:text-accent prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded
-                  prose-pre:bg-muted prose-pre:text-foreground
-                  prose-blockquote:border-l-accent prose-blockquote:text-muted-foreground
-                  prose-ul:text-foreground prose-ol:text-foreground
-                  prose-li:text-foreground"
-              />
-            </CardContent>
-          </Card>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
+            <Card>
+              <CardContent className="p-8">
+                <EditorContent
+                  editor={editor}
+                  className="prose prose-lg max-w-none
+                    prose-headings:font-bold prose-headings:text-foreground
+                    prose-p:text-foreground prose-p:leading-relaxed
+                    prose-a:text-primary prose-a:no-underline hover:prose-a:underline
+                    prose-strong:text-foreground prose-strong:font-bold
+                    prose-code:text-accent prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded
+                    prose-pre:bg-muted prose-pre:text-foreground
+                    prose-blockquote:border-l-accent prose-blockquote:text-muted-foreground
+                    prose-ul:text-foreground prose-ol:text-foreground
+                    prose-li:text-foreground
+                    [&_.ProseMirror]:outline-none [&_.ProseMirror_img]:max-w-[700px] [&_.ProseMirror_img]:h-auto [&_.ProseMirror_img]:rounded-lg [&_.ProseMirror_img]:shadow-lg [&_.ProseMirror_img]:my-6"
+                />
+              </CardContent>
+            </Card>
+          </motion.div>
 
           {/* Comments Section */}
           <CommentSection postId={post.id} comments={comments} />
